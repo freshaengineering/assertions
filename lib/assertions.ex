@@ -984,25 +984,18 @@ defmodule Assertions do
 
   @doc false
   def assert_async(condition, end_time, expr, timeout, sleep_time) do
-    result =
-      try do
-        condition.()
-      rescue
-        _ in [ExUnit.AssertionError] -> false
-      end
-
-    if result == false do
-      if NaiveDateTime.compare(NaiveDateTime.utc_now(), end_time) == :lt do
-        Process.sleep(sleep_time)
-        assert_async(condition, end_time, expr, timeout, sleep_time)
-      else
-        raise ExUnit.AssertionError,
-          args: [timeout],
-          expr: expr,
-          message: "Given condition did not return true before timeout: #{timeout}"
-      end
-    else
+    try do
+      condition.()
       true
+    rescue
+      e in [ExUnit.AssertionError] -> 
+        if NaiveDateTime.compare(NaiveDateTime.utc_now(), end_time) == :lt do
+          Process.sleep(sleep_time)
+          assert_async(condition, end_time, expr, timeout, sleep_time)
+        else
+          e = %{e | message: "Given condition did not return true before timeout: #{timeout}\n\n#{e.message}"}
+          reraise e, __STACKTRACE__
+        end
     end
   end
 
