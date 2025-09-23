@@ -231,4 +231,13 @@ defmodule Assertions.FailureExamples do
       end)
     end
   end
+
+  describe "assert_async/1" do
+    test "fails if the expression does not raise" do
+      assert_async(timeout: 10) do
+        assert 1 == 2
+      end
+    end
+  end
+
 end
